@@ -271,15 +271,4 @@ async def night(players, first):
 
 if __name__ == '__main__':
 
-	lis1 = ["a", "a","a","b","c"]
-	lis2 = [1,2,3,4,5]
-	di1 = {}
-
-	for i, j in zip(lis1, lis2):
-			di1.setdefault(i, []).append(j)
-
-	print(di1.values())
-	for i in []:
-		print(1)
-	print("done")
-    #bot.run(open('TOKEN').read().strip())
+	bot.run(open('TOKEN').read().strip())
