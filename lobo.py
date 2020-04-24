@@ -101,7 +101,7 @@ the villagers: their goal is to kill all the werewolves.
 
 '''
 
-@bot.command(description="Let's play The Werewolves", pass_context=True)
+@bot.command(description="Let's play The Werewolves of Millers Hollow", pass_context=True)
 async def werewolves(ctx):
 
 	# Checks if the user that triggered the command is in a voice channel,
@@ -126,17 +126,24 @@ async def werewolves(ctx):
 				"GUARD",
 				"PIED PIPER"]
 
+	#add some villagers and shuffle the pile
+	characters = ["VILLAGER" for i in range(max(1,len(members)/4))] + characters
 	random.shuffle(characters)
+	#make sure there's the needed number of werewolves
 	characters = ["WEREWOLF" for i in range(max(1,len(members)/4))] + characters
 
 	random.shuffle(members)
 
-	players = dict(zip(characters, members))
+	players = {}
+	for role, player in zip(characters, members):
+		players.setdefault(role, []).append(player)
+
 
 	await bot.say("    The roles have been assigned and will be notificated via DM")
 
-	for role, player in players.items():
-		await sendDM(player, role)
+	for role in players.keys():
+		for player in players[role]:
+			await sendDM(player, role)
 
 
 	await asyncio.sleep(5)
@@ -145,6 +152,7 @@ async def werewolves(ctx):
 	await voteMayor(players)
 
 	await bot.say("    The first election was so exhausting, you people wanted to go to sleep.")
+	await night(players, True)
 
 
 
@@ -157,13 +165,14 @@ async def voteMayor(players):
 
 	# reset the mayor
 	if "MAYOR" in players.keys():
-		players.pop("MAYOR")
+		del players["MAYOR"]
 
 	await bot.say("    You shall vote the MAYOR.\nThe MAYOR's vote will count as 2 votes in case of a draw, until after the next voting")
 	await bot.say("    To vote for a player, add an emoji/reaction to the message with it's name. A draw will result in no elections taken (you have 1 minute)")
 	
 	pool = []
-	for player in players.values():
+	# we use a set in case players appear twice on the list (lovers, charmed,...)
+	for player in {x for playerlist in players.values() for x in playerlist}:
 		msg = await bot.say("    - "+player.mention)
 		pool.append((msg.channel, msg.id))
 
@@ -173,7 +182,7 @@ async def voteMayor(players):
 	await bot.say("    OK, let's check the votes:")
 
 
-	winner = "No one got votes"
+	winner = ""
 	maxVotes = 0
 	for candidate in pool:
 		candidate = await bot.get_message(candidate[0], candidate[1])
@@ -197,8 +206,80 @@ async def voteMayor(players):
 		await bot.say("    The MAYOR is: "+winner.mention+". CONGRATULATIONS 🥳!")
 		players["MAYOR"] = winner
 	
+# Any run a poll with all the players given, and returns a winner
+async def poll(players, timeGiven):
+	pass
+
+async def night(players, first):
+
+	if players["THIEF"] and first:
+		# chooses from 2 roles that were left to pick (including 2 werewolves and 1 villager)
+		characters = ["THIEF",
+				"CUPID",
+				"WITCH",
+				"ORACLE",
+				"HUNTER",
+				"IDIOT",
+				"ANCIENT",
+				"SCAPEGOAT",
+				"GUARD",
+				"PIED PIPER",
+				"WEREWOLF",
+				"WEREWOLF",
+				"VILLAGER"]
+		random.shuffle(characters)
+		options = [x for role in characters if role not in players.keys() or role == "WEREWOLF" or role == "VILLAGER"][:2]
+		# send messages and collect response
+		del players["THIEF"]
+
+	if players["CUPID"] and first:
+		# choose 2 people, then tell those 2 that they are lovers
+		available = {x for playerlist in players.values() for x in playerlist}.discard(players["CUPID"][0])
+		# send messages and collect response
+		
+
+	if players["WEREWOLF"] and not first:
+		# vote who to kill via DMs
+		available = {x for playerlist in players.values() for x in playerlist if x not in players["WEREWOLF"]}
+		# send messages and collect response
+
+	if players["WITCH"] and not first:
+		# chooses to use life potion and/or death potion or none
+		#maybe will have to make a subclass of discord.user that keeps track of potions in order for witch to work
+		pass
+
+	if players["ORACLE"] and not first:
+		# chooses a player, to know it's identity (it's role) 
+		available = {x for playerlist in players.values() for x in playerlist}.discard(players["ORACLE"][0])
+		# send messages and collect response
+
+
+	if players["GUARD"] and not first:
+		# chooses someone, that player can't die this night
+		guarded = players.setdefault("GUARDED",[])
+		available = {x for playerlist in players.values() for x in playerlist if x not in guarded}.discard(players["GUARD"][0])
+		# send messages and collect response
+
+	if players["PIED PIPER"] and not first:
+		# chooses 2 people that get charmed, they meet the other charmed people during that night 
+		charmed = players.setdefault("CHARMED",[])
+		available = {x for playerlist in players.values() for x in playerlist if x not in charmed}.discard(players["PIED PIPER"][0])
+		# send messages and collect response
+
+
+
 
 if __name__ == '__main__':
 
+	lis1 = ["a", "a","a","b","c"]
+	lis2 = [1,2,3,4,5]
+	di1 = {}
 
-    bot.run(open('TOKEN').read().strip())
+	for i, j in zip(lis1, lis2):
+			di1.setdefault(i, []).append(j)
+
+	print(di1.values())
+	for i in []:
+		print(1)
+	print("done")
+    #bot.run(open('TOKEN').read().strip())
